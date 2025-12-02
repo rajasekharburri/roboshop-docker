@@ -106,6 +106,7 @@ SUPPORT_URL="https://help.ubuntu.com/"
 BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
 PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
 UBUNTU_CODENAME=jammy
+
 root@f737494b25ff:/# apt update #To install netstat we use this command
 Get:1 http://security.ubuntu.com/ubuntu jammy-security InRelease [129 kB]
 Get:2 http://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 InRelease [3005 B]
@@ -132,6 +133,7 @@ Reading package lists... Done
 Building dependency tree... Done
 Reading state information... Done
 1 package can be upgraded. Run 'apt list --upgradable' to see it.
+
 root@f737494b25ff:/# apt install net-tools
 Reading package lists... Done
 Building dependency tree... Done
@@ -149,6 +151,7 @@ Selecting previously unselected package net-tools.
 Preparing to unpack .../net-tools_1.60+git20181103.0eebece-1ubuntu5.4_amd64.deb ...
 Unpacking net-tools (1.60+git20181103.0eebece-1ubuntu5.4) ...
 Setting up net-tools (1.60+git20181103.0eebece-1ubuntu5.4) ...
+
 root@f737494b25ff:/# netstat -lntp
 Active Internet connections (only servers)
 Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
