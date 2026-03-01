@@ -1,155 +1,16 @@
-✅ **STEP-BY-STEP EXPLANATION
+roboshop docker notes -- catalogue
 
-(How you solved MongoDB connection issue)**
+here mainly 
 
-1️⃣ You built the catalogue Docker image
-docker build -t catalogue:v1 .
+1. host -> you no need docker interface, directly connect to host
+2. bridge -> docker creates another virtual network interface inside server and allocates the IP address to containers
 
+docker default bridge network can't communicate between containers
 
-This created an image that runs server.js and expects a MongoDB connection at:
-
-MONGO_URL=mongodb://mongodb:27017/catalogue
-
-
-➡️ Important:
-This means the catalogue service will try to connect using DNS name mongodb.
-
-2️⃣ You ran both containers — but on the default bridge network
-docker run -d --name mongodb mongodb:v1
-docker run -d --name catalogue catalogue:v1
-
-
-Problem:
-Default Docker bridge network has no DNS resolution for container names.
-
-Meaning:
-
-catalogue tries to connect to hostname mongodb
-
-But in bridge network, that hostname does not resolve
-
-So connection fails
-
-📌 Your logs confirmed this:
-
-MongoNetworkError
-
-
-And health check showed:
-
-"mongo": false
-
-3️⃣ You checked Docker networks
-docker network ls
-
-
-You saw only:
-
-bridge
-
-host
-
-none
-
-No custom network.
-
-4️⃣ You created a new custom network
-docker network create roboshop
-
-
-🔥 This is the key step.
-
-Why?
-
-➡️ Custom Docker bridge networks automatically give DNS resolution.
-➡️ Containers can reach each other using container names as hostnames.
-
-5️⃣ You removed the old containers
-docker rm -f catalogue
-docker rm -f mongodb
-
-
-Because you must start them again attached to the custom network.
-
-6️⃣ You ran MongoDB inside the new network
-docker run -d --name mongodb --network roboshop mongodb:v1
-
-
-This gives MongoDB the hostname:
-
-mongodb.roboshop
-
-
-(or simply mongodb inside same network)
-
-7️⃣ You ran catalogue inside the new network
-docker run -d --name catalogue --network roboshop catalogue:v1
-
-
-Now the environment variable inside catalogue:
-
-MONGO_URL=mongodb://mongodb:27017/catalogue
-
-
-finally works because:
-
-✔ DNS entry mongodb now resolves
-✔ Both containers are inside same roboshop network
-
-8️⃣ Health check shows success
-
-Inside the container:
-
-curl http://localhost:8080/health
-
-
-Output:
-
-{"app":"OK","mongo":true}
-
-
-🎉 MongoDB connection successful!
-
-🌟 FINAL RESULT
-
-Your final working setup:
-
-Custom Docker network: roboshop
-
-MongoDB container connected to roboshop
-
-Catalogue container connected to roboshop
-
-Catalogue service can now resolve hostname mongodb
-
-Connection successful
-
-✅ Why this works
-
-Docker default bridge network
-❌ NO automatic DNS
-❌ Containers cannot talk using names
-
-Custom docker network (roboshop)
-✔ Automatic DNS
-✔ Container names become hostnames
-✔ catalogue → mongodb connection works
-
-🎯 Summary in 3 Lines
-
-Your app expects MongoDB at hostname mongodb.
-
-Default Docker network does NOT support container name DNS.
-
-Creating a custom network fixed the connectivity.
-
-
-100.28.219.90 | 172.31.70.233 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
-[ ec2-user@ip-172-31-70-233 ~/roboshop-docker ]$ cd catalogue/
-
-100.28.219.90 | 172.31.70.233 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
-[ ec2-user@ip-172-31-70-233 ~/roboshop-docker/catalogue ]$ ls
-Dockerfile  package.json  readme.md  server.js
+docker always recommends two things:-
+1. use bridge network
+2. create your own network interface
+==========================================================================================================================================================================
 
 100.28.219.90 | 172.31.70.233 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
 [ ec2-user@ip-172-31-70-233 ~/roboshop-docker/catalogue ]$ docker build -t catalogue:v1 .
@@ -201,16 +62,20 @@ mongodb:v1     2267e7020679       1.13GB          280MB    U
 
 100.28.219.90 | 172.31.70.233 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
 [ ec2-user@ip-172-31-70-233 ~/roboshop-docker/catalogue ]$ docker run -d --name catalogue catalogue:v1
+========================================================================
 91565f6a240609160c8ad963e1f69715666b977217a5b805bc31f3d6c6355ba7
 
 100.28.219.90 | 172.31.70.233 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
-[ ec2-user@ip-172-31-70-233 ~/roboshop-docker/catalogue ]$ docker exec -it catalogue  bash
+[ ec2-user@ip-172-31-70-233 ~/roboshop-docker/catalogue ]$ docker exec -it catalogue  bash                      
+========================================================================
 root@91565f6a2406:/opt/server# curl http://localhost:8080/health
+========================================================================
 {"app":"OK","mongo":false}root@91565f6a2406:/opt/server# exit
 exit
 
 100.28.219.90 | 172.31.70.233 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
 [ ec2-user@ip-172-31-70-233 ~/roboshop-docker/catalogue ]$ docker logs catalogue
+=================================================================================
 (node:1) [MONGODB DRIVER] Warning: Current Server Discovery and Monitoring engine is deprecated, and will be removed in a future version. To use the new Server Discover and Monitoring engine, pass option { useUnifiedTopology: true } to the MongoClient constructor.
 (Use `node --trace-warnings ...` to show where the warning was created)
 {"level":"info","time":1764649283652,"pid":1,"hostname":"91565f6a2406","msg":"Started on port 8080","v":1}
@@ -349,6 +214,7 @@ exit
 
 100.28.219.90 | 172.31.70.233 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
 [ ec2-user@ip-172-31-70-233 ~/roboshop-docker/catalogue ]$ ifconfig
+==============================================================================
 docker0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         inet 172.17.0.1  netmask 255.255.0.0  broadcast 172.17.255.255
         inet6 fe80::cc90:6dff:fea8:2a81  prefixlen 64  scopeid 0x20<link>
@@ -403,6 +269,7 @@ vetha52b552: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 
 100.28.219.90 | 172.31.70.233 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
 [ ec2-user@ip-172-31-70-233 ~/roboshop-docker/catalogue ]$ docker inspect catalogue
+====================================================================================
 [
     {
         "Id": "91565f6a240609160c8ad963e1f69715666b977217a5b805bc31f3d6c6355ba7",
@@ -606,6 +473,7 @@ vetha52b552: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 
 100.28.219.90 | 172.31.70.233 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
 [ ec2-user@ip-172-31-70-233 ~/roboshop-docker/catalogue ]$ docker inspect mongodb
+=====================================================================================
 [
     {
         "Id": "e4ea45045ac56c04c1baef44c761b356751ba63c4b66cb05506c948653b9e477",
@@ -843,6 +711,7 @@ vetha52b552: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 
 100.28.219.90 | 172.31.70.233 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
 [ ec2-user@ip-172-31-70-233 ~/roboshop-docker/catalogue ]$ docker network
+================================================================================
 Usage:  docker network COMMAND
 
 Manage networks
@@ -860,6 +729,7 @@ Run 'docker network COMMAND --help' for more information on a command.
 
 100.28.219.90 | 172.31.70.233 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
 [ ec2-user@ip-172-31-70-233 ~/roboshop-docker/catalogue ]$ docker network ls
+=====================================================================================
 NETWORK ID     NAME      DRIVER    SCOPE
 1e57b46be2b6   bridge    bridge    local
 ec641fb87751   host      host      local
@@ -867,6 +737,7 @@ ec641fb87751   host      host      local
 
 100.28.219.90 | 172.31.70.233 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
 [ ec2-user@ip-172-31-70-233 ~/roboshop-docker/catalogue ]$ docker run -d --network host nginx
+====================================================================================
 Unable to find image 'nginx:latest' locally
 latest: Pulling from library/nginx
 de57a609c9d5: Pull complete
@@ -884,6 +755,7 @@ Status: Downloaded newer image for nginx:latest
 
 100.28.219.90 | 172.31.70.233 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
 [ ec2-user@ip-172-31-70-233 ~/roboshop-docker/catalogue ]$ docker network ls
+=================================================================================
 NETWORK ID     NAME      DRIVER    SCOPE
 1e57b46be2b6   bridge    bridge    local
 ec641fb87751   host      host      local
@@ -962,35 +834,16 @@ ec641fb87751   host      host      local
         }
     }
 ]
-
-100.28.219.90 | 172.31.70.233 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
-[ ec2-user@ip-172-31-70-233 ~/roboshop-docker/catalogue ]$ docker network
-Usage:  docker network COMMAND
-
-Manage networks
-
-Commands:
-  connect     Connect a container to a network
-  create      Create a network
-  disconnect  Disconnect a container from a network
-  inspect     Display detailed information on one or more networks
-  ls          List networks
-  prune       Remove all unused networks
-  rm          Remove one or more networks
-
-Run 'docker network COMMAND --help' for more information on a command.
-
-100.28.219.90 | 172.31.70.233 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
-[ ec2-user@ip-172-31-70-233 ~/roboshop-docker/catalogue ]$ docker create roboshop
-Unable to find image 'roboshop:latest' locally
-Error response from daemon: pull access denied for roboshop, repository does not exist or may require 'docker login'
+1
 
 100.28.219.90 | 172.31.70.233 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
 [ ec2-user@ip-172-31-70-233 ~/roboshop-docker/catalogue ]$ docker network  create roboshop
+=============================================================================
 6b709a7f9a3981aeadbf86d8c5dad38534c5d73b801f66cae71ae71841817958
 
 100.28.219.90 | 172.31.70.233 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
 [ ec2-user@ip-172-31-70-233 ~/roboshop-docker/catalogue ]$ docker network ls
+=============================================================================
 NETWORK ID     NAME       DRIVER    SCOPE
 1e57b46be2b6   bridge     bridge    local
 ec641fb87751   host       host      local
@@ -999,15 +852,7 @@ ec641fb87751   host       host      local
 
 100.28.219.90 | 172.31.70.233 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
 [ ec2-user@ip-172-31-70-233 ~/roboshop-docker/catalogue ]$ docker network disconnect bridge mongodb
-
-100.28.219.90 | 172.31.70.233 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
-[ ec2-user@ip-172-31-70-233 ~/roboshop-docker/catalogue ]$ docker network ls
-NETWORK ID     NAME       DRIVER    SCOPE
-1e57b46be2b6   bridge     bridge    local
-ec641fb87751   host       host      local
-90380fca13e1   none       null      local
-6b709a7f9a39   roboshop   bridge    local
-
+=============================================================================
 100.28.219.90 | 172.31.70.233 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
 [ ec2-user@ip-172-31-70-233 ~/roboshop-docker/catalogue ]$ docker network disconnect bridge catalogue
 
