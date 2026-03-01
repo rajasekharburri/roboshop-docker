@@ -1,12 +1,13 @@
-NOTES
-------
+NOTES MONGODB
+===========
 when a container is started for the first time it will execute files with extensions .sh and .js that are found in /docker-entrypoint-initdb.d. files will be executed in alphabetical order .js files will be executed by mongosh
 
 
 practice
-----------
+==================
 3.233.234.102 | 172.31.70.87 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
-[ ec2-user@ip-172-31-70-87 ~/roboshop-docker/mongodb ]$ docker build -t mongodb:v1 .
+[ ec2-user@ip-172-31-70-87 ~/roboshop-docker/mongodb ]$ docker build -t mongodb:v1 .   
+                                                                                                                                        ====>command
 [+] Building 0.7s (7/7) FINISHED                                                                                docker:default
  => [internal] load build definition from Dockerfile                                                                      0.0s
  => => transferring dockerfile: 92B                                                                                       0.0s
@@ -28,7 +29,8 @@ practice
  => => unpacking to docker.io/library/mongodb:v1                                                                          0.0s
 
 3.233.234.102 | 172.31.70.87 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
-[ ec2-user@ip-172-31-70-87 ~/roboshop-docker/mongodb ]$ docker run -d mongodb:v1
+[ ec2-user@ip-172-31-70-87 ~/roboshop-docker/mongodb ]$ docker run -d mongodb:v1         
+                                                                                   ===>command
 97019cbfc50c17b4fb77bb425b5849c911a1fa05d74e0611ac43143707d61ba9
 
 3.233.234.102 | 172.31.70.87 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
@@ -50,8 +52,9 @@ Error response from daemon: No such container: fc
 CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS       NAMES
 0a7f5b19a00e   b5cddfc06c3c   "docker-entrypoint.s…"   5 minutes ago   Up 5 minutes   27017/tcp   great_hugle
 
-3.233.234.102 | 172.31.70.87 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git    #name change we use this
-[ ec2-user@ip-172-31-70-87 ~/roboshop-docker/mongodb ]$ docker run -d --name mongodb mongodb:v1
+3.233.234.102 | 172.31.70.87 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git    # name change we use this
+[ ec2-user@ip-172-31-70-87 ~/roboshop-docker/mongodb ]$ docker run -d --name mongodb mongodb:v1  
+                                                                                                 ====>command
 f737494b25fff73a4101fa4856d2b1ac23523d227ec61e4bd87c68500eebd1a7
 
 3.233.234.102 | 172.31.70.87 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
@@ -61,8 +64,9 @@ f737494b25ff   mongodb:v1     "docker-entrypoint.s…"   6 seconds ago   Up 6 se
 0a7f5b19a00e   b5cddfc06c3c   "docker-entrypoint.s…"   5 minutes ago   Up 5 minutes   27017/tcp   great_hugle
 
 3.233.234.102 | 172.31.70.87 | t3.micro | https://github.com/rajasekharburri/roboshop-docker.git
-[ ec2-user@ip-172-31-70-87 ~/roboshop-docker/mongodb ]$ docker exec -it mongodb bash
-root@f737494b25ff:/# mongosh
+[ ec2-user@ip-172-31-70-87 ~/roboshop-docker/mongodb ]$ docker exec -it mongodb bash        
+                                                                                      ====>command
+root@f737494b25ff:/# mongosh                                                                                                                       ====>command
 Current Mongosh Log ID: 692d37c3b0c9e9cb269dc29c
 Connecting to:          mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+2.5.9
 Using MongoDB:          7.0.26
@@ -81,16 +85,19 @@ You can opt-out by running the disableTelemetry() command.
    2025-12-01T06:36:20.587+00:00: For customers running MongoDB 7.0, we suggest changing the contents of the following sysfsFile
 ------
 
-test> show dbs
+test> show dbs                
+                                                                                                                ====> command
 admin   40.00 KiB
 config  12.00 KiB
 local   40.00 KiB
 test> exit
-root@f737494b25ff:/# netstat -lntp
+root@f737494b25ff:/# netstat -lntp     
+                                                                                                          ====>command
 bash: netstat: command not found
 
-root@f737494b25ff:/# cat /etc/*release
-DISTRIB_ID=Ubuntu  #os
+root@f737494b25ff:/# cat /etc/*release   #os   
+                                                                                                  ====>  command
+DISTRIB_ID=Ubuntu  
 DISTRIB_RELEASE=22.04
 DISTRIB_CODENAME=jammy
 DISTRIB_DESCRIPTION="Ubuntu 22.04.5 LTS"
@@ -107,7 +114,8 @@ BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
 PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
 UBUNTU_CODENAME=jammy
 
-root@f737494b25ff:/# apt update #To install netstat we use this command
+root@f737494b25ff:/# apt update         
+                                                                   ====>command #To install netstat we use this command
 Get:1 http://security.ubuntu.com/ubuntu jammy-security InRelease [129 kB]
 Get:2 http://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 InRelease [3005 B]
 Get:3 http://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0/multiverse amd64 Packages [96.5 kB]
@@ -134,7 +142,8 @@ Building dependency tree... Done
 Reading state information... Done
 1 package can be upgraded. Run 'apt list --upgradable' to see it.
 
-root@f737494b25ff:/# apt install net-tools
+root@f737494b25ff:/# apt install net-tools                                                                                                
+                                            ====>command
 Reading package lists... Done
 Building dependency tree... Done
 Reading state information... Done
@@ -152,7 +161,8 @@ Preparing to unpack .../net-tools_1.60+git20181103.0eebece-1ubuntu5.4_amd64.deb 
 Unpacking net-tools (1.60+git20181103.0eebece-1ubuntu5.4) ...
 Setting up net-tools (1.60+git20181103.0eebece-1ubuntu5.4) ...
 
-root@f737494b25ff:/# netstat -lntp
+root@f737494b25ff:/# netstat -lntp                                                                           
+                                   ====>command             
 Active Internet connections (only servers)
 Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
 tcp        0      0 0.0.0.0:27017           0.0.0.0:*               LISTEN      -
