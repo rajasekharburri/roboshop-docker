@@ -1,5 +1,13 @@
-const mongoClient = require('mongodb').MongoClient;
-const mongoObjectID = require('mongodb').ObjectID;
+const instana = require('@instana/collector');
+// init tracing
+// MUST be done before loading anything else!
+instana({
+    tracing: {
+        enabled: true
+    }
+});
+// change to test image layers, again
+const { MongoClient, ObjectId } = require('mongodb');
 const bodyParser = require('body-parser');
 const express = require('express');
 const pino = require('pino');
@@ -15,9 +23,9 @@ const expLogger = expPino({
 });
 
 // MongoDB
-var db;
-var collection;
-var mongoConnected = false;
+let db;
+let collection;
+let mongoConnected = false;
 
 const app = express();
 
@@ -26,6 +34,20 @@ app.use(expLogger);
 app.use((req, res, next) => {
     res.set('Timing-Allow-Origin', '*');
     res.set('Access-Control-Allow-Origin', '*');
+    next();
+});
+
+app.use((req, res, next) => {
+    let dcs = [
+        "asia-northeast2",
+        "asia-south1",
+        "europe-west3",
+        "us-east1",
+        "us-west1"
+    ];
+    let span = instana.currentSpan();
+    span.annotate('custom.sdk.tags.datacenter', dcs[Math.floor(Math.random() * dcs.length)]);
+
     next();
 });
 
@@ -42,7 +64,7 @@ app.get('/health', (req, res) => {
 
 // all products
 app.get('/products', (req, res) => {
-    if(mongoConnected) {
+    if (mongoConnected) {
         collection.find({}).toArray().then((products) => {
             res.json(products);
         }).catch((e) => {
@@ -51,27 +73,27 @@ app.get('/products', (req, res) => {
         });
     } else {
         req.log.error('database not available');
-        res.status(500).send('database not avaiable');
+        res.status(500).send('database not available');
     }
 });
 
 // product by SKU
 app.get('/product/:sku', (req, res) => {
-    if(mongoConnected) {
+    if (mongoConnected) {
         // optionally slow this down
         const delay = process.env.GO_SLOW || 0;
         setTimeout(() => {
-        collection.findOne({sku: req.params.sku}).then((product) => {
-            req.log.info('product', product);
-            if(product) {
-                res.json(product);
-            } else {
-                res.status(404).send('SKU not found');
-            }
-        }).catch((e) => {
-            req.log.error('ERROR', e);
-            res.status(500).send(e);
-        });
+            collection.findOne({ sku: req.params.sku }).then((product) => {
+                req.log.info('product', product);
+                if (product) {
+                    res.json(product);
+                } else {
+                    res.status(404).send('SKU not found');
+                }
+            }).catch((e) => {
+                req.log.error('ERROR', e);
+                res.status(500).send(e);
+            });
         }, delay);
     } else {
         req.log.error('database not available');
@@ -81,9 +103,9 @@ app.get('/product/:sku', (req, res) => {
 
 // products in a category
 app.get('/products/:cat', (req, res) => {
-    if(mongoConnected) {
+    if (mongoConnected) {
         collection.find({ categories: req.params.cat }).sort({ name: 1 }).toArray().then((products) => {
-            if(products) {
+            if (products) {
                 res.json(products);
             } else {
                 res.status(404).send('No products for ' + req.params.cat);
@@ -94,13 +116,13 @@ app.get('/products/:cat', (req, res) => {
         });
     } else {
         req.log.error('database not available');
-        res.status(500).send('database not avaiable');
+        res.status(500).send('database not available');
     }
 });
 
 // all categories
 app.get('/categories', (req, res) => {
-    if(mongoConnected) {
+    if (mongoConnected) {
         collection.distinct('categories').then((categories) => {
             res.json(categories);
         }).catch((e) => {
@@ -115,8 +137,8 @@ app.get('/categories', (req, res) => {
 
 // search name and description
 app.get('/search/:text', (req, res) => {
-    if(mongoConnected) {
-        collection.find({ '$text': { '$search': req.params.text }}).toArray().then((hits) => {
+    if (mongoConnected) {
+        collection.find({ '$text': { '$search': req.params.text } }).toArray().then((hits) => {
             res.json(hits);
         }).catch((e) => {
             req.log.error('ERROR', e);
@@ -128,54 +150,25 @@ app.get('/search/:text', (req, res) => {
     }
 });
 
-if (process.env.MONGO == 'true') {
 // set up Mongo
-function mongoConnect() {
-    return new Promise((resolve, reject) => {
-        var mongoURL = process.env.MONGO_URL || 'mongodb://mongodb:27017/catalogue';
-        mongoClient.connect(mongoURL, (error, client) => {
-            if(error) {
-                reject(error);
-            } else {
-                db = client.db('catalogue');
-                collection = db.collection('products');
-                resolve('connected');
-            }
-        });
-    });
-}
-}
-
-if (process.env.DOCUMENTDB == 'true') {
-function mongoConnect() {
-    return new Promise((resolve, reject) => {
-    var mongoURL = process.env.MONGO_URL || 'mongodb://username:password@mongodb:27017/catalogue?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false';
-    var client = mongoClient.connect(mongoURL,
-      {
-        // Mutable & Immutable
-        //tlsCAFile: `/home/roboshop/catalogue/rds-combined-ca-bundle.pem` //Specify the DocDB; cert
-        // Container
-        tlsCAFile: `/app/rds-combined-ca-bundle.pem` //Specify the DocDB; cert
-    }, (error, client) => {
-    if(error) {
-        reject(error);
-    } else {
+async function mongoConnect() {
+    try {
+        const mongoURL = process.env.MONGO_URL || 'mongodb://mongodb:27017/catalogue';
+        const client = await MongoClient.connect(mongoURL, { useNewUrlParser: true, useUnifiedTopology: true });
         db = client.db('catalogue');
         collection = db.collection('products');
-        resolve('connected');
+        mongoConnected = true;
+        logger.info('MongoDB connected');
+    } catch (error) {
+        mongoConnected = false;
+        logger.error('ERROR', error);
+        setTimeout(mongoLoop, 2000);
     }
-});
-});
 }
-}
-
 
 // mongodb connection retry loop
 function mongoLoop() {
-    mongoConnect().then((r) => {
-        mongoConnected = true;
-        logger.info('MongoDB connected');
-    }).catch((e) => {
+    mongoConnect().catch((e) => {
         logger.error('ERROR', e);
         setTimeout(mongoLoop, 2000);
     });
@@ -185,9 +178,6 @@ mongoLoop();
 
 // fire it up!
 const port = process.env.CATALOGUE_SERVER_PORT || '8080';
-const MONGO = process.env.MONGO || 'false';
-const DOCUMENTDB = process.env.DOCUMENTDB || 'false';
-
 app.listen(port, () => {
     logger.info('Started on port', port);
 });
